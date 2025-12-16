@@ -33,4 +33,8 @@ public abstract class BaseEntity<T extends BaseDTO> implements
     public void fromDTO(T dto){
         DTOUtils.fromDTOToEntity(dto,this);
     }
+    // Método agregado para prueba de DevOps
+    public String checkPipeline() {
+        return "DevOps Pipeline Test OK";
+    }
 }

@@ -1,0 +1,253 @@
+# Ejercicio práctico - DevOps-001
+# Gestión de Java con SDKMAN! y pipeline local con Maven utilizando joko-utils
+
+---
+
+## 3.1. Preparación del entorno con SDKMAN!
+
+### Investigación
+SDKMAN! es una herramienta de gestión de versiones para facilitar el cambio entre distintos SDKs (Software Development Kits) en entornos Unix/Linux. Permite instalar, administrar y alternar entre múltiples versiones de Java y otras herramientas del ecosistema JVM.
+
+### Pasos realizados
+
+1. **Instalación de SDKMAN!:** Se procedió a la instalación mediante curl y se inicializaron los scripts necesarios en la terminal.
+2. **Listado y Selección:** Se listaron las versiones de Java disponibles y se analizó la tabla de proveedores y versiones.
+3. **Elección de versión LTS:** Se seleccionó la versión **Java 17 (Eclipse Temurin)**.
+   - **Justificación:** Se eligió porque es una versión **LTS (Long-Term Support)**, lo que garantiza estabilidad, soporte extendido de seguridad y es el estándar actual en la industria para el desarrollo de aplicaciones modernas.
+4. **Instalación del JDK:** Se descargó e instaló la versión `17.0.17-tem`.
+5. **Configuración de Entorno (Resolución de conflicto):** Debido a que el sistema operativo tenía una versión de Java 8 preinstalada en `/opt` con prioridad alta (por software bancario), se configuró manualmente la variable `PATH` en la sesión actual para priorizar la nueva versión de Java 17 sin afectar la configuración global del sistema.
+6. **Verificación:** Se confirmó que el comando `java -version` apuntara a la versión instalada por SDKMAN!.
+
+### Comandos utilizados
+
+```bash
+# 1. Descarga e instalación de SDKMAN!
+curl -s "https://get.sdkman.io" | bash
+
+# 2. Carga de las variables de entorno de SDKMAN!
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+# 3. Verificación de la versión de SDKMAN!
+sdk version
+
+# 4. Listado de versiones disponibles de Java
+sdk list java
+
+# 5. Instalación de la versión LTS seleccionada (Java 17 Temurin)
+sdk install java 17.0.17-tem
+
+# 6. Forzado de la variable PATH (necesario por conflicto con Java 8 en /opt)
+export PATH="$HOME/.sdkman/candidates/java/17.0.17-tem/bin:$PATH"
+
+# 7. Verificación final de que el sistema usa Java 17
+java -version
+```
+
+### Versiones finalmente configuradas
+
+**Gestor de versiones:** SDKMAN! 5.20.0
+
+**Java Development Kit (JDK):**
+* **Versión:** OpenJDK 17.0.17
+* **Distribución:** Temurin (Eclipse Adoptium)
+* **Identificador en SDKMAN:** 17.0.17-tem
+
+---
+
+## 3.2. Instalación de Maven desde el repositorio oficial de Ubuntu
+
+### Forma de instalación
+Se procedió a instalar Apache Maven utilizando el gestor de paquetes nativo de Ubuntu.
+
+* **Paquete utilizado:** `maven` (repositorio oficial de Ubuntu)
+* **Comando de instalación:** `sudo apt install maven`
+
+### Versión de Maven instalada
+
+**Apache Maven 3.8.7**
+* Maven home: `/usr/share/maven`
+
+### Evidencia de integración con SDKMAN!
+
+Se verificó que Maven está utilizando el entorno Java gestionado por SDKMAN! y no el Java del sistema operativo.
+
+#### Salida del comando `mvn -version`:
+```
+Apache Maven 3.8.7
+Maven home: /usr/share/maven
+Java version: 17.0.17, vendor: Eclipse Adoptium, runtime: /home/sysadmin/.sdkman/candidates/java/17.0.17-tem
+Default locale: es_ES, platform encoding: UTF-8
+OS name: "linux", version: "6.14.0-36-generic", arch: "amd64", family: "unix"
+```
+
+**Confirmación:** Maven del sistema utiliza correctamente el `JAVA_HOME` configurado por SDKMAN!.
+
+---
+
+## 3.3. Obtención y exploración del proyecto joko-utils
+
+### Clonado del repositorio
+
+* **Comando:** `git clone https://github.com/JokoFramework/joko-utils.git`
+* **Directorio de trabajo:** `/home/sysadmin/Documentos/proyectos/devops/joko-utils`
+* **Nota:** El archivo `NOTAS_DEVOPS.md` ha sido creado en la raíz del proyecto clonado.
+
+### Ubicación del pom.xml
+
+El archivo `pom.xml` se encuentra en la **raíz del proyecto**. Este archivo es el núcleo de la configuración de Maven (Project Object Model).
+
+### Estructura de directorios principales
+
+El proyecto sigue la estructura estándar de Maven ("Standard Directory Layout"):
+
+* **`src/main/java`:** Contiene el código fuente de la aplicación (la lógica del framework).
+* **`src/test/java`:** Contiene los tests unitarios (importante para la fase de `test` del pipeline).
+
+### Referencias a procesos de Integración Continua
+
+Durante la exploración con `ls -la`, se identificó la existencia de configuraciones de CI:
+
+* **Herramienta detectada:** GitHub Actions
+* **Ubicación:** Directorio oculto `.github/workflows/`
+* **Archivos encontrados:** `maven.yml`
+* **Conclusión:** El proyecto ya cuenta con una definición remota para compilar y testear el código cada vez que se hace un push al repositorio.
+
+---
+
+## 3.4. Simulación de pipeline CI local con Maven
+
+Se ejecutaron manualmente las fases estándar del ciclo de vida de Maven para validar el funcionamiento del proyecto y entender el flujo de construcción.
+
+### Ejecución de Fases (Bitácora)
+
+#### 1. Limpieza (Clean)
+* **Comando:** `mvn clean`
+* **Objetivo:** Eliminar artefactos de compilaciones previas
+* **Resultado:** ✅ `BUILD SUCCESS`
+* **Detalle:** Se eliminó el directorio `/home/sysadmin/Documentos/proyectos/devops/joko-utils/target`
+
+#### 2. Validación (Validate)
+* **Comando:** `mvn validate`
+* **Objetivo:** Validar la estructura y configuración del proyecto
+* **Resultado:** ✅ `BUILD SUCCESS`
+* **Tiempo:** 0.836 s
+
+#### 3. Compilación (Compile)
+* **Comando:** `mvn compile`
+* **Objetivo:** Compilar el código fuente de `src/main/java`
+* **Resultado:** ✅ `BUILD SUCCESS`
+* **Detalle:** Se compilaron **19 archivos fuente** en `target/classes`
+* **Nota:** Se observaron advertencias (warnings) sobre uso de APIs deprecadas en `ReflectionUtils.java` y operaciones no seguras en `BaseEntity.java`. Esto es normal en código legado, pero no detiene la compilación.
+
+#### 4. Pruebas (Test)
+* **Comando:** `mvn test`
+* **Objetivo:** Ejecutar pruebas unitarias
+* **Resultado:** ✅ `BUILD SUCCESS`
+* **Resumen de Tests:**
+  - **Ejecutados:** 7
+  - **Fallos:** 0
+  - **Errores:** 0
+  - **Tiempo total:** ~32.6 s (debido principalmente a `UUIDGenerationTest` que toma 30s)
+
+#### 5. Empaquetado (Package)
+* **Comando:** `mvn package`
+* **Objetivo:** Empaquetar el código compilado y probado en un archivo JAR
+* **Resultado:** ✅ `BUILD SUCCESS`
+* **Resumen de Tests:**
+  - **Ejecutados:** 7
+  - **Fallos:** 0
+  - **Errores:** 0
+  - **Tiempo total:** ~32.6 s
+
+### Verificación del Artefacto Generado
+
+Tras finalizar la fase de `package`, se verificó la existencia del entregable final:
+
+* **Nombre del artefacto:** `joko-utils-0.6.9.jar`
+* **Ruta completa:** `/home/sysadmin/Documentos/proyectos/devops/joko-utils/target/joko-utils-0.6.9.jar`
+
+---
+
+## 3.5. Creación de un script de pipeline local
+
+### Script de Automatización (`run-ci.sh`)
+
+Se creó un script en Bash para estandarizar la ejecución del pipeline local.
+
+* **Ubicación:** Raíz del proyecto
+* **Permisos:** Se otorgó ejecución con `chmod +x run-ci.sh`
+* **Contenido:** El script imprime versiones de herramientas, ejecuta `mvn clean validate compile test package` y maneja errores con `set -e`
+
+### Registro de la primera ejecución
+
+Se ejecutó el script `./run-ci.sh` confirmando la automatización exitosa.
+
+#### Datos obtenidos:
+* **Java Activo:** OpenJDK 17.0.17 (Temurin via SDKMAN)
+* **Maven:** Apache Maven 3.8.7 (Sistema operativo)
+* **Integración:** Se confirmó que Maven del sistema utiliza el `JAVA_HOME` de SDKMAN
+
+#### Resultados del Pipeline:
+1. **Limpieza y Validación:** ✅ Correctas
+2. **Compilación:** ✅ Exitosa (con advertencias de API deprecada conocidas)
+3. **Tests:** ✅ Se ejecutaron todos los tests, incluyendo `UUIDGenerationTest` (duración ~30s)
+4. **Empaquetado:** ✅ Se generó el archivo `.jar` en el directorio `target/`
+
+#### Gestión de Errores
+Se verificó que el script cuenta con la instrucción `set -e`, lo que garantiza que si un test falla en el futuro, el script se detendrá inmediatamente y no imprimirá el mensaje de éxito, simulando el comportamiento de un servidor CI (Jenkins/GitHub Actions).
+
+#### Errores encontrados y resolución
+No se encontraron errores durante la ejecución del script. Todas las fases se completaron exitosamente.
+
+---
+
+## 3.6. Cambio mínimo en el código y re-ejecución del pipeline
+
+### Modificación realizada
+Se seleccionó una clase del núcleo del proyecto para realizar un cambio controlado y verificar la detección de cambios del pipeline.
+
+* **Archivo modificado:** `src/main/java/io/github/jokoframework/utils/dto_mapping/BaseEntity.java`
+* **Descripción del cambio:** Se agregó un método público simple `checkPipelineStatus()` que retorna un String. Este cambio modifica el código fuente, obligando a Maven a generar un nuevo binario compilado.
+
+### Resultados de la re-ejecución
+
+Se ejecutó nuevamente el script de automatización `./run-ci.sh`.
+
+#### Evidencia del proceso:
+1. **Detección del cambio:** Al ejecutarse la fase `clean` seguida de `compile`, Maven eliminó los binarios anteriores y recompiló los **19 archivos fuente** del proyecto. Esto asegura que el nuevo método sea parte del bytecode final.
+2. **Integridad (Tests):** Se ejecutaron nuevamente los **7 tests unitarios**.
+   - **Resultado:** ✅ `BUILD SUCCESS` (0 Failures).
+   - **Conclusión:** El cambio introducido fue no disruptivo y no afectó la lógica de negocio existente.
+3. **Generación del Artefacto:** Se creó un nuevo archivo `.jar` en el directorio `target/` con una nueva marca de tiempo, listo para ser desplegado.
+
+---
+
+## 3.7. Reflexión DevOps
+
+### 1. Utilidad de gestionar múltiples versiones con SDKMAN!
+En un entorno DevOps real, es común trabajar con arquitecturas heterogéneas donde conviven sistemas legado (legacy) que requieren Java 8 y microservicios modernos que corren en Java 17 o 21.
+**SDKMAN!** es vital porque:
+* **Consistencia:** Permite cambiar el entorno de compilación en segundos para igualar el entorno de producción, evitando el clásico error "funciona en mi máquina".
+* **Agilidad:** Elimina la necesidad de reinstalar o manipular manualmente variables de entorno complejas (`PATH`, `JAVA_HOME`) cada vez que se cambia de proyecto contextualmente.
+
+### 2. Maven desde repositorio de Ubuntu vs. Otras formas
+**Ventajas del repositorio oficial (`apt`):**
+* **Estabilidad y Seguridad:** Los paquetes son firmados y probados por el equipo de Ubuntu/Debian.
+* **Integración:** Se actualiza junto con el resto del sistema operativo (`apt upgrade`) y es fácil de automatizar en scripts de aprovisionamiento de servidores (Ansible/Terraform).
+
+**Desventajas:**
+* **Versiones desactualizadas:** Los repositorios oficiales suelen tener versiones antiguas (ej. Maven 3.6 o 3.8 cuando ya existe la 4.0), lo que puede limitar el uso de plugins nuevos.
+* **Rigidez:** Es difícil tener múltiples versiones de Maven instaladas en paralelo, a diferencia de herramientas como SDKMAN! o descargar el binario directo.
+
+### 3. Similitud con un pipeline real (Jenkins/GitHub Actions)
+Los pasos realizados en este ejercicio replican casi exactamente un "Stage" de construcción en un servidor de CI:
+1.  **Checkout:** El `git clone` inicial equivale a la fase de `checkout scm`.
+2.  **Environment Setup:** La configuración de SDKMAN! equivale a la definición de `tools { jdk 'java-17' }` en Jenkins o `setup-java` en GitHub Actions.
+3.  **Build Execution:** El script `run-ci.sh` actúa como el ejecutor del pipeline. El uso de `mvn clean package` es el estándar industrial.
+4.  **Fail Fast:** La instrucción `set -e` en nuestro script simula el comportamiento de CI: si una fase falla, todo el proceso se detiene inmediatamente y se notifica error (rojo).
+
+### 4. Detección de fallos antes de producción
+El pipeline diseñado actúa como un filtro de calidad en dos etapas críticas:
+1.  **Fase `compile`:** Detecta errores de sintaxis, tipos de datos incorrectos o dependencias faltantes. Si esto falla, el código ni siquiera es ejecutable.
+2.  **Fase `test`:** Es la barrera más importante. Aquí se detectan errores de lógica de negocio o regresiones (cosas que funcionaban y dejaron de hacerlo).
+**Conclusión:** Si cualquiera de estas dos fases falla, el ciclo de Maven se detiene antes de llegar a la fase `package`. Esto garantiza que **nunca se genere un artefacto (JAR) defectuoso**, protegiendo así el entorno productivo de despliegues rotos.
