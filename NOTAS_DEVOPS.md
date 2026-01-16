@@ -3,7 +3,7 @@
 
 ---
 
-## 3.1. Preparación del entorno con SDKMAN!
+## Preparación del entorno con SDKMAN!
 
 ### Investigación
 SDKMAN! es una herramienta de gestión de versiones para facilitar el cambio entre distintos SDKs (Software Development Kits) en entornos Unix/Linux. Permite instalar, administrar y alternar entre múltiples versiones de Java y otras herramientas del ecosistema JVM.
@@ -54,7 +54,7 @@ java -version
 
 ---
 
-## 3.2. Instalación de Maven desde el repositorio oficial de Ubuntu
+## Instalación de Maven desde el repositorio oficial de Ubuntu
 
 ### Forma de instalación
 Se procedió a instalar Apache Maven utilizando el gestor de paquetes nativo de Ubuntu.
@@ -84,7 +84,7 @@ OS name: "linux", version: "6.14.0-36-generic", arch: "amd64", family: "unix"
 
 ---
 
-## 3.3. Obtención y exploración del proyecto joko-utils
+## Obtención y exploración del proyecto joko-utils
 
 ### Clonado del repositorio
 
@@ -114,7 +114,7 @@ Durante la exploración con `ls -la`, se identificó la existencia de configurac
 
 ---
 
-## 3.4. Simulación de pipeline CI local con Maven
+## Simulación de pipeline CI local con Maven
 
 Se ejecutaron manualmente las fases estándar del ciclo de vida de Maven para validar el funcionamiento del proyecto y entender el flujo de construcción.
 
@@ -168,7 +168,7 @@ Tras finalizar la fase de `package`, se verificó la existencia del entregable f
 
 ---
 
-## 3.5. Creación de un script de pipeline local
+## Creación de un script de pipeline local
 
 ### Script de Automatización (`run-ci.sh`)
 
@@ -201,7 +201,7 @@ No se encontraron errores durante la ejecución del script. Todas las fases se c
 
 ---
 
-## 3.6. Cambio mínimo en el código y re-ejecución del pipeline
+## Cambio mínimo en el código y re-ejecución del pipeline
 
 ### Modificación realizada
 Se seleccionó una clase del núcleo del proyecto para realizar un cambio controlado y verificar la detección de cambios del pipeline.
@@ -222,7 +222,7 @@ Se ejecutó nuevamente el script de automatización `./run-ci.sh`.
 
 ---
 
-## 3.7. Reflexión DevOps
+## Reflexión DevOps
 
 ### 1. Utilidad de gestionar múltiples versiones con SDKMAN!
 En un entorno DevOps real, es común trabajar con arquitecturas heterogéneas donde conviven sistemas legado (legacy) que requieren Java 8 y microservicios modernos que corren en Java 17 o 21.
@@ -251,3 +251,92 @@ El pipeline diseñado actúa como un filtro de calidad en dos etapas críticas:
 1.  **Fase `compile`:** Detecta errores de sintaxis, tipos de datos incorrectos o dependencias faltantes. Si esto falla, el código ni siquiera es ejecutable.
 2.  **Fase `test`:** Es la barrera más importante. Aquí se detectan errores de lógica de negocio o regresiones (cosas que funcionaban y dejaron de hacerlo).
 **Conclusión:** Si cualquiera de estas dos fases falla, el ciclo de Maven se detiene antes de llegar a la fase `package`. Esto garantiza que **nunca se genere un artefacto (JAR) defectuoso**, protegiendo así el entorno productivo de despliegues rotos.
+
+
+
+# Ejercicio práctico - DevOps-002
+# Infraestructura de CI con Docker y Jenkins
+
+---
+
+
+## Instalación y configuración de Docker Engine
+
+### 1. Instalación desde Repositorio Oficial
+Se siguió la documentación oficial de Docker para Ubuntu, configurando el repositorio `stable` y las llaves GPG para asegurar la autenticidad de los paquetes.
+
+**Comandos utilizados:**
+```bash
+# 1. Configuración del llavero (Keyrings) y dependencias
+sudo apt update
+sudo apt install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL [https://download.docker.com/linux/ubuntu/gpg](https://download.docker.com/linux/ubuntu/gpg) -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# 2. Agregado del repositorio oficial a apt sources
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: [https://download.docker.com/linux/ubuntu](https://download.docker.com/linux/ubuntu)
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+# 3. Instalación de los paquetes del motor
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+# 2. Gestión de usuarios (Post-instalación)
+
+Para cumplir con el requisito de no utilizar `sudo` en cada comando, se agregó el usuario actual al grupo `docker`.
+
+**Comandos de permisos:**
+```bash
+# Agregar usuario al grupo docker
+sudo usermod -aG docker $USER
+
+# Refrescar la sesión del grupo (evita tener que reiniciar el equipo)
+newgrp docker
+```
+
+---
+
+### 3. Resolución de Problemas (Troubleshooting)
+
+Durante la verificación, se encontró un error al intentar conectar con el demonio de Docker sin `sudo`.
+
+**Error encontrado:**
+```
+Cannot connect to the Docker daemon at unix:///home/sysadmin/.docker/desktop/docker.sock
+```
+
+**Diagnóstico:** El comando `docker context ls` mostró que el contexto activo era `desktop-linux`, apuntando a una instalación de Docker Desktop en lugar del Engine nativo recién instalado.
+
+**Solución:** Se cambió el contexto al socket por defecto de Linux.
+
+```bash
+docker context use default
+```
+
+---
+
+### 4. Verificación de la instalación
+
+#### Prueba funcional (hello-world)
+Se ejecutó exitosamente el contenedor de prueba sin privilegios de root.
+
+```
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+```
+
+#### Versión instalada
+Salida del comando `docker version`:
+
+```
+Docker version 29.1.3, build f52814d
+```
+
+---
