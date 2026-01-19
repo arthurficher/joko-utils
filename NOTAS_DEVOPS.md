@@ -340,3 +340,63 @@ Docker version 29.1.3, build f52814d
 ```
 
 ---
+
+## Despliegue de Jenkins en Docker
+
+
+### 1. Selección de Imagen
+Se seleccionó la imagen oficial de Jenkins disponible en Docker Hub bajo el tag `lts` (`jenkins/jenkins:lts`), asegurando una versión con soporte extendido y mayor estabilidad para el entorno de CI.
+
+### 2. Comando de Despliegue y Explicación
+Se diseñó y ejecutó el siguiente comando para levantar la instancia con persistencia de datos:
+
+```bash
+docker run -d \
+  -p 8080:8080 -p 50000:50000 \
+  -v jenkins_home:/var/jenkins_home \
+  --name jenkins-server \
+  jenkins/jenkins:lts
+```
+
+#### Análisis de Flags:
+
+-d: Inicia el contenedor en modo "detached" (segundo plano).
+
+-p 8080:8080: Publica el puerto de la interfaz web hacia el host.
+
+-p 50000:50000: Habilita la comunicación para agentes o nodos de Jenkins.
+
+-v jenkins_home:/var/jenkins_home: Crea y monta un Volumen de Docker. Esto garantiza la persistencia, permitiendo que la configuración y los Jobs sobrevivan incluso si el contenedor es eliminado y recreado.
+
+--name: Asigna un identificador amigable al contenedor para facilitar su gestión.
+
+
+#### Evidencia de que el contenedor está corriendo (docker ps).
+
+Se confirmó que el contenedor se encuentra operativo mediante el comando ```docker ps```.
+
+Evidencia de Logs (Contraseña Inicial): Se accedió a los logs del contenedor mediante docker logs jenkins-server para recuperar el token de seguridad inicial requerido para la configuración del administrador.
+
+### Estado de Contenedores Docker
+
+```bash
+docker ps
+
+CONTAINER ID: c803f00ad138
+IMAGE:        jenkins/jenkins:lts
+NAMES:        mi-jenkins
+STATUS:       Up About an hour
+PORTS:        0.0.0.0:8080->8080/tcp
+              0.0.0.0:50000->50000/tcp
+COMMAND:      "/usr/bin/tini -- /u…"
+CREATED:      About an hour ago
+```
+
+## Configuración de Herramientas (Global Tool Configuration)
+
+### 💡 Reflexión: Aislamiento del Entorno
+**¿Por qué Jenkins no puede usar el Java/Maven de mi Ubuntu?**
+El contenedor de Jenkins es un sistema aislado que no tiene acceso a los binarios del host (`/usr/bin/java` de Ubuntu). Por ello, debemos configurar instaladores automáticos dentro de Jenkins para que él descargue sus propias versiones en `/var/jenkins_home/tools`.
+
+**Nota sobre Seguridad:**
+Jenkins muestra una advertencia: *"Building on the built-in node can be a security issue"*. Esto indica que en producción se deberían usar agentes distribuidos. Sin embargo, para este laboratorio local, ejecutaremos los jobs en el nodo integrado (built-in) aceptando este riesgo controlado.
