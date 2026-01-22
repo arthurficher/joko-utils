@@ -434,3 +434,23 @@ Se verificó la generación del binario a través de la interfaz web de Jenkins:
 * **Ruta de navegación:** Menú de la tarea > **Espacio de trabajo (Workspace)** > carpeta `target`.
 * **Artefacto encontrado:** `joko-utils-0.6.9.jar`.
 * **Conclusión:** El entorno de CI contenerizado ha sido capaz de clonar, compilar y empaquetar el proyecto de forma autónoma, cumpliendo el objetivo del ejercicio.
+
+## Reflexión DevOps II
+
+### 1. Ventajas de Jenkins en Docker vs. Instalación Nativa
+Correr Jenkins en un contenedor ofrece beneficios críticos sobre una instalación directa en el hardware físico (`apt install`):
+* **Aislamiento total:** El servidor Jenkins tiene su propio sistema de archivos y dependencias. Esto evita conflictos con el sistema operativo anfitrión (por ejemplo, si el servidor necesita Java 8 para otra app bancaria, Jenkins puede correr con Java 17 sin interferir).
+* **Portabilidad:** La configuración de infraestructura se define en un comando o archivo (Dockerfile/Compose). Si mi computadora falla, puedo levantar el mismo Jenkins en cualquier otro servidor con Docker en minutos, sin tener que reconfigurar librerías manualmente.
+* **Limpieza:** Al desinstalar Jenkins nativo, suelen quedar residuos de configuración en `/etc` o `/var`. Con Docker, basta con eliminar el contenedor y el volumen para dejar el sistema impecable.
+
+### 2. Volúmenes en Docker y Persistencia
+* **¿Qué es?** Un volumen es un mecanismo de Docker para desacoplar los datos del ciclo de vida del contenedor. Es un directorio en el host que se "monta" dentro del contenedor.
+* **Caso práctico:** En este ejercicio, el volumen `-v jenkins_home:/var/jenkins_home` fue vital.
+* **Consecuencia de no usarlo:** Los contenedores son **efímeros**. Si no hubiera usado un volumen, al apagar o eliminar el contenedor (como hice para corregir el error de DNS), **se habrían perdido todos los datos**: el usuario administrador, los plugins instalados y la configuración del Job. Jenkins habría regresado a su estado de "fábrica" (Install Wizard), perdiendo todo el trabajo realizado.
+
+### 3. Valor de la ejecución automática (CI) vs. Manual
+Aunque en el Ejercicio 1 el script `run-ci.sh` automatizaba los comandos, dependía de que **yo recordara ejecutarlo**.
+Jenkins aporta valor porque:
+* **Objetividad:** Elimina el factor "en mi máquina funciona". El test se ejecuta en un entorno neutral y limpio (el contenedor), garantizando que el código es realmente desplegable.
+* **Disciplina:** Transforma la calidad en un proceso sistemático. En un entorno real, Jenkins detecta el error en el momento en que se hace el `push`, avisando al equipo inmediatamente (Fail Fast), lo que reduce drásticamente el costo de corregir errores en comparación con encontrarlos días después.
+* **Historial y Trazabilidad:** Jenkins guarda un registro de cada ejecución (Build #1, #2, #3...), permitiendo auditar cuándo y por qué falló algo, algo que la ejecución manual en terminal no ofrece.
