@@ -400,3 +400,37 @@ El contenedor de Jenkins es un sistema aislado que no tiene acceso a los binario
 
 **Nota sobre Seguridad:**
 Jenkins muestra una advertencia: *"Building on the built-in node can be a security issue"*. Esto indica que en producción se deberían usar agentes distribuidos. Sin embargo, para este laboratorio local, ejecutaremos los jobs en el nodo integrado (built-in) aceptando este riesgo controlado.
+
+
+## Creación del Job "joko-utils-build"
+
+Se configuró una tarea de estilo libre para compilar el proyecto utilizando las herramientas contenerizadas.
+
+### Configuración del Job
+* **Repositorio:** Fork personal de GitHub.
+* **Rama:** `*/develop` (Ajustado tras detectar que el proyecto usa GitFlow).
+* **JDK:** `jdk-17` (Configurado manualmente en Global Tools tras corrección).
+* **Maven Goals:** `clean package`.
+
+### Resolución de Dificultades (Troubleshooting)
+Durante la configuración inicial se resolvieron dos bloqueos:
+1.  **Git:** Jenkins no encontraba la rama `master`. Se corrigió apuntando a la rama existente `develop`.
+2.  **JDK:** El menú de selección de JDK no aparecía. Se solucionó configurando correctamente el jdk 17 y recargando la configuración de la tarea.
+
+---
+
+## Ejecución y Verificación
+
+### 1. Ejecución
+Se lanzó la tarea manualmente mediante el botón **"Construir ahora"**.
+* **Ejecución exitosa:** Build #3.
+* **Resultado:** `SUCCESS`.
+
+### 2. Análisis de Consola
+Se verificó en la "Salida de consola" que Maven ejecutó correctamente las fases de `clean`, `compile` (descargando dependencias), `test` y `package` sin errores.
+
+### 3. Localización del Artefacto
+Se verificó la generación del binario a través de la interfaz web de Jenkins:
+* **Ruta de navegación:** Menú de la tarea > **Espacio de trabajo (Workspace)** > carpeta `target`.
+* **Artefacto encontrado:** `joko-utils-0.6.9.jar`.
+* **Conclusión:** El entorno de CI contenerizado ha sido capaz de clonar, compilar y empaquetar el proyecto de forma autónoma, cumpliendo el objetivo del ejercicio.
